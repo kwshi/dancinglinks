@@ -12,19 +12,16 @@ type itemNode struct {
 }
 
 type entryNode struct {
-	itemIndex   int
+	item        *itemNode
 	optionIndex int
 	up          *entryNode
 	down        *entryNode
 }
 
 type DancingLinks struct {
-	// A fixed slice of pointers to item nodes.
-	items    []*itemNode
-
 	// Slice mapping index of each option to a slice of entries
 	// corresponding to that option.
-	entries  [][]*entryNode
+	entries [][]*entryNode
 
 	// Blank "anchor" item node, whose `right` points to the first
 	// item to be covered.
@@ -33,14 +30,15 @@ type DancingLinks struct {
 
 func New(itemCount int, options [][]int) DancingLinks {
 	dl := DancingLinks{
-		items: make([]*itemNode, itemCount),
-		entries: make([][]*entryNode, len(options)),
+		entries:  make([][]*entryNode, len(options)),
 		itemHead: &itemNode{index: -1},
 	}
 
+	items := make([]*itemNode, itemCount)
+
 	// Construct item list.
 	lastItem := dl.itemHead
-	for index := range dl.items {
+	for index := range items {
 		newItem := &itemNode{
 			index: index,
 			left:  lastItem,
@@ -48,7 +46,7 @@ func New(itemCount int, options [][]int) DancingLinks {
 		}
 
 		// Add item to item slice.
-		dl.items[index] = newItem
+		items[index] = newItem
 
 		// Append to linked list.
 		lastItem.right = newItem
@@ -61,7 +59,7 @@ func New(itemCount int, options [][]int) DancingLinks {
 
 	// Keep track of bottom-most node for each column (item).
 	lastEntries := make([]*entryNode, itemCount)
-	for itemIndex, item := range dl.items {
+	for itemIndex, item := range items {
 		lastEntries[itemIndex] = item.head
 	}
 
@@ -69,7 +67,7 @@ func New(itemCount int, options [][]int) DancingLinks {
 	for optionIndex, optionItems := range options {
 		for _, itemIndex := range optionItems {
 			newEntry := &entryNode{
-				itemIndex:   itemIndex,
+				item:        items[itemIndex],
 				optionIndex: optionIndex,
 				up:          lastEntries[itemIndex],
 			}
@@ -84,7 +82,7 @@ func New(itemCount int, options [][]int) DancingLinks {
 	}
 
 	// Make column lists cyclic to reduce edge cases.
-	for index, item := range dl.items {
+	for index, item := range items {
 		lastEntries[index].down = item.head
 		item.head.up = lastEntries[index]
 	}
@@ -108,7 +106,6 @@ func (dl DancingLinks) CollectSolutions() [][]int {
 	})
 	return covers
 }
-
 
 func (dl DancingLinks) GenerateSolutions(yield func([]int)) {
 	// First item to cover.
@@ -134,7 +131,7 @@ func (dl DancingLinks) GenerateSolutions(yield func([]int)) {
 
 		// Delete each covered item.
 		for _, covered := range entries {
-			item := dl.items[covered.itemIndex]
+			item := covered.item
 
 			// Delete covered item from linked list.
 			item.left.right = item.right
@@ -172,7 +169,7 @@ func (dl DancingLinks) GenerateSolutions(yield func([]int)) {
 			// We deleted the items left to right (increasing index), so we
 			// uncover the items right to left (decreasing index).
 			entry := entries[len(entries)-1-i]
-			item := dl.items[entry.itemIndex]
+			item := entry.item
 
 			// Uncover item.
 			item.left.right = item
