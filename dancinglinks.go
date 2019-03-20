@@ -10,19 +10,19 @@ type itemNode struct {
 
 	// Blank "anchor" entry node whose `down` points to the
 	// first/top-most entry covering this item.
-	head  *entryNode
+	head *entryNode
 }
 
 type entryNode struct {
 	// The item covered by this entry.
-	item   *itemNode
+	item *itemNode
 
 	// The index of the option this entry belongs to.
 	option int
 
 	// Linked list neighbors.
-	up     *entryNode
-	down   *entryNode
+	up   *entryNode
+	down *entryNode
 }
 
 type DancingLinks struct {
@@ -94,6 +94,49 @@ func New(itemCount int, options [][]int) DancingLinks {
 	}
 
 	return dl
+}
+
+func FromMatrix(matrix [][]bool) DancingLinks {
+	itemCount := 0
+	options := make([][]int, len(matrix))
+
+	for i, row := range matrix {
+		if len(row) > itemCount {
+			itemCount = len(row)
+		}
+
+		option := []int{}
+		for j, cell := range row {
+			if cell {
+				option = append(option, j)
+			}
+		}
+
+		options[i] = option
+	}
+
+	return New(itemCount, options)
+}
+
+func (dl DancingLinks) ToMatrix() [][]bool {
+	items := map[*itemNode]int{}
+	index := 0
+	for item := dl.itemHead.right; item != dl.itemHead; item = item.right {
+		items[item] = index
+		index++
+	}
+
+	mat := make([][]bool, len(dl.options))
+
+	for i, option := range dl.options {
+		row := make([]bool, len(items))
+		for _, entry := range option {
+			row[items[entry.item]] = true
+		}
+		mat[i] = row
+	}
+
+	return mat
 }
 
 // Solves an exact cover problem with Donald Knuth's dancing links
