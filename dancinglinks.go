@@ -180,7 +180,7 @@ func (dl DancingLinks) GenerateSolutions(yield func([]int)) {
 	}
 
 	// Consider each option that covers the first item.
-	for candidate := first.head.down; candidate != first.head; candidate = candidate.down {
+	for choice := first.head.down; choice != first.head; choice = choice.down {
 
 		// Keep track of deleted options so that (1) we don't do redundant
 		// deletes, which break things, and (2) we can un-delete them in
@@ -189,7 +189,7 @@ func (dl DancingLinks) GenerateSolutions(yield func([]int)) {
 		deleted := []int{}
 
 		// Retrieve all entries covered by the selected option.
-		entries := dl.options[candidate.option]
+		entries := dl.options[choice.option]
 
 		// Delete each covered item.
 		for _, covered := range entries {
@@ -227,7 +227,7 @@ func (dl DancingLinks) GenerateSolutions(yield func([]int)) {
 
 		// Recursive call.
 		dl.GenerateSolutions(func(subcover []int) {
-			yield(append(subcover, candidate.option))
+			yield(append(subcover, choice.option))
 		})
 
 		// Uncover items in reverse order.
