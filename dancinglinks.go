@@ -11,6 +11,11 @@ type itemNode struct {
 	// Blank "anchor" entry node whose `down` points to the
 	// first/top-most entry covering this item.
 	head *entryNode
+
+	// Number of (remaining) entries that cover the item.  At each
+	// iteration the dancing links algorithm chooses the item with the
+	// fewest options covering it.
+	choices int
 }
 
 type entryNode struct {
@@ -77,6 +82,8 @@ func New(itemCount int, options [][]int) DancingLinks {
 				option: option,
 				up:     lastEntries[itemIndex],
 			}
+
+			newEntry.item.choices++
 
 			// Add entry to corresponding row (option) record.
 			dl.options[option] = append(dl.options[option], newEntry)
@@ -157,8 +164,14 @@ func (dl DancingLinks) CollectSolutions() [][]int {
 }
 
 func (dl DancingLinks) GenerateSolutions(yield func([]int)) {
-	// First item to cover.
+	// First item to cover.  We find the item with the fewest remaining
+	// choices.
 	first := dl.itemHead.right
+	for item := first; item != dl.itemHead; item = item.right {
+		if item.choices < first.choices {
+			first = item
+		}
+	}
 
 	// Nothing left to cover!
 	if first == dl.itemHead {
@@ -204,6 +217,10 @@ func (dl DancingLinks) GenerateSolutions(yield func([]int)) {
 				for _, entry := range dl.options[conflict.option] {
 					entry.up.down = entry.down
 					entry.down.up = entry.up
+
+					// Update the corresponding item's record of remaining
+					// items.
+					entry.item.choices--
 				}
 			}
 		}
@@ -234,6 +251,9 @@ func (dl DancingLinks) GenerateSolutions(yield func([]int)) {
 			for _, entry := range dl.options[option] {
 				entry.up.down = entry
 				entry.down.up = entry
+
+				// Update item's choices counter.
+				entry.item.choices++
 			}
 		}
 	}
