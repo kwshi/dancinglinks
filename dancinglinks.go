@@ -1,51 +1,57 @@
-package main
-
-import (
-	"fmt"
-)
+package dancinglinks
 
 type itemNode struct {
+	// Index of the item.
 	index int
+
+	// Linked list neighbors.
 	left  *itemNode
 	right *itemNode
+
+	// Blank "anchor" entry node whose `down` points to the
+	// first/top-most entry covering this item.
 	head  *entryNode
 }
 
 type entryNode struct {
-	item        *itemNode
-	optionIndex int
-	up          *entryNode
-	down        *entryNode
+	// The item covered by this entry.
+	item   *itemNode
+
+	// The index of the option this entry belongs to.
+	option int
+
+	// Linked list neighbors.
+	up     *entryNode
+	down   *entryNode
 }
 
 type DancingLinks struct {
-	// Slice mapping index of each option to a slice of entries
-	// corresponding to that option.
-	entries [][]*entryNode
+	// A list of options.  Each "option" is a list of pointers to the
+	// entries provided by that option.
+	options [][]*entryNode
 
-	// Blank "anchor" item node, whose `right` points to the first
-	// item to be covered.
+	// Blank "anchor" item node, whose `right` points to the
+	// first/left-most item to be covered.
 	itemHead *itemNode
 }
 
 func New(itemCount int, options [][]int) DancingLinks {
 	dl := DancingLinks{
-		entries:  make([][]*entryNode, len(options)),
+		options:  make([][]*entryNode, len(options)),
 		itemHead: &itemNode{index: -1},
 	}
 
-	items := make([]*itemNode, itemCount)
-
 	// Construct item list.
+	items := make([]*itemNode, itemCount)
 	lastItem := dl.itemHead
 	for index := range items {
 		newItem := &itemNode{
 			index: index,
 			left:  lastItem,
-			head:  &entryNode{optionIndex: -1},
+			head:  &entryNode{option: -1},
 		}
 
-		// Add item to item slice.
+		// Add item to slice.
 		items[index] = newItem
 
 		// Append to linked list.
@@ -64,16 +70,16 @@ func New(itemCount int, options [][]int) DancingLinks {
 	}
 
 	// Create and append entry nodes.
-	for optionIndex, optionItems := range options {
+	for option, optionItems := range options {
 		for _, itemIndex := range optionItems {
 			newEntry := &entryNode{
-				item:        items[itemIndex],
-				optionIndex: optionIndex,
-				up:          lastEntries[itemIndex],
+				item:   items[itemIndex],
+				option: option,
+				up:     lastEntries[itemIndex],
 			}
 
 			// Add entry to corresponding row (option) record.
-			dl.entries[optionIndex] = append(dl.entries[optionIndex], newEntry)
+			dl.options[option] = append(dl.options[option], newEntry)
 
 			// Append to column-specific linked list.
 			lastEntries[itemIndex].down = newEntry
@@ -127,7 +133,7 @@ func (dl DancingLinks) GenerateSolutions(yield func([]int)) {
 		deleted := []int{}
 
 		// Retrieve all entries covered by the selected option.
-		entries := dl.entries[candidate.optionIndex]
+		entries := dl.options[candidate.option]
 
 		// Delete each covered item.
 		for _, covered := range entries {
@@ -143,16 +149,16 @@ func (dl DancingLinks) GenerateSolutions(yield func([]int)) {
 				// We can only delete nodes once; trying to re-delete may
 				// break things.  So if we've already deleted something, don't
 				// try delete it again.
-				if sliceContains(deleted, conflict.optionIndex) {
+				if intSliceContains(deleted, conflict.option) {
 					continue
 				}
 
 				// Record deleted option.
-				deleted = append(deleted, conflict.optionIndex)
+				deleted = append(deleted, conflict.option)
 
 				// To delete an option, we go through and delete each entry in
 				// the option.
-				for _, entry := range dl.entries[conflict.optionIndex] {
+				for _, entry := range dl.options[conflict.option] {
 					entry.up.down = entry.down
 					entry.down.up = entry.up
 				}
@@ -161,7 +167,7 @@ func (dl DancingLinks) GenerateSolutions(yield func([]int)) {
 
 		// Recursive call.
 		dl.GenerateSolutions(func(subcover []int) {
-			yield(append(subcover, candidate.optionIndex))
+			yield(append(subcover, candidate.option))
 		})
 
 		// Uncover items in reverse order.
@@ -179,10 +185,10 @@ func (dl DancingLinks) GenerateSolutions(yield func([]int)) {
 		// Restore conflicting options in reverse order.
 		for i := range deleted {
 			// Retrieve index of deleted option, in reverse order.
-			optionIndex := deleted[len(deleted)-1-i]
+			option := deleted[len(deleted)-1-i]
 
 			// To restore the option, we restore each entry in the option.
-			for _, entry := range dl.entries[optionIndex] {
+			for _, entry := range dl.options[option] {
 				entry.up.down = entry
 				entry.down.up = entry
 			}
@@ -190,27 +196,11 @@ func (dl DancingLinks) GenerateSolutions(yield func([]int)) {
 	}
 }
 
-func sliceContains(slice []int, element int) bool {
+func intSliceContains(slice []int, element int) bool {
 	for _, e := range slice {
 		if e == element {
 			return true
 		}
 	}
 	return false
-}
-
-func main() {
-
-	dl := New(7, [][]int{
-		[]int{2, 4},
-		[]int{2, 4},
-		[]int{0, 3, 4, 5, 6},
-		[]int{1, 2, 5},
-		[]int{0, 3, 5},
-		[]int{1, 6},
-		[]int{3, 4, 6},
-	})
-
-	fmt.Println(dl.CollectSolutions())
-
 }
