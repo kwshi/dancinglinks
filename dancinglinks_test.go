@@ -8,68 +8,93 @@ import (
 	"testing"
 )
 
+type example struct {
+	itemCount int
+	options [][]int
+	matrix [][]bool
+	solution [][]int
+}
+
 var (
-	classic = New(7, [][]int{
-		[]int{2, 4},
-		[]int{0, 3, 6},
-		[]int{1, 2, 5},
-		[]int{0, 3, 5},
-		[]int{1, 6},
-		[]int{3, 4, 6},
-	})
-	classicMatrix = [][]bool{
-		[]bool{false, false, true, false, true, false, false},
-		[]bool{true, false, false, true, false, false, true},
-		[]bool{false, true, true, false, false, true, false},
-		[]bool{true, false, false, true, false, true, false},
-		[]bool{false, true, false, false, false, false, true},
-		[]bool{false, false, false, true, true, false, true},
-	}
-	classicSolution = [][]int{
-		[]int{0, 3, 4},
-	}
-
-	classicDuplicates = New(7, [][]int{
-		[]int{2, 4},
-		[]int{2, 4},
-		[]int{0, 3, 6},
-		[]int{1, 2, 5},
-		[]int{0, 3, 5},
-		[]int{0, 3, 5},
-		[]int{1, 6},
-		[]int{3, 4, 6},
-	})
-	classicDuplicatesMatrix = [][]bool{
-		[]bool{false, false, true, false, true, false, false},
-		[]bool{false, false, true, false, true, false, false},
-		[]bool{true, false, false, true, false, false, true},
-		[]bool{false, true, true, false, false, true, false},
-		[]bool{true, false, false, true, false, true, false},
-		[]bool{true, false, false, true, false, true, false},
-		[]bool{false, true, false, false, false, false, true},
-		[]bool{false, false, false, true, true, false, true},
-	}
-	classicDuplicatesSolution = [][]int{
-		[]int{0, 4, 6},
-		[]int{0, 5, 6},
-		[]int{1, 4, 6},
-		[]int{1, 5, 6},
+	classic = example{
+		itemCount: 7,
+		options: [][]int{
+			[]int{2, 4},
+			[]int{0, 3, 6},
+			[]int{1, 2, 5},
+			[]int{0, 3, 5},
+			[]int{1, 6},
+			[]int{3, 4, 6},
+		},
+		matrix: [][]bool{
+			[]bool{false, false, true, false, true, false, false},
+			[]bool{true, false, false, true, false, false, true},
+			[]bool{false, true, true, false, false, true, false},
+			[]bool{true, false, false, true, false, true, false},
+			[]bool{false, true, false, false, false, false, true},
+			[]bool{false, false, false, true, true, false, true},
+		},
+		solution: [][]int{
+			[]int{0, 3, 4},
+		},
 	}
 
-	impossible = New(2, [][]int{
-		[]int{1},
-	})
-	impossibleMatrix = [][]bool{
-		[]bool{false, true},
+	classicDuplicates = example{
+		itemCount: 7,
+		options: [][]int{
+			[]int{2, 4},
+			[]int{2, 4},
+			[]int{0, 3, 6},
+			[]int{1, 2, 5},
+			[]int{0, 3, 5},
+			[]int{0, 3, 5},
+			[]int{1, 6},
+			[]int{3, 4, 6},
+		},
+		matrix: [][]bool{
+			[]bool{false, false, true, false, true, false, false},
+			[]bool{false, false, true, false, true, false, false},
+			[]bool{true, false, false, true, false, false, true},
+			[]bool{false, true, true, false, false, true, false},
+			[]bool{true, false, false, true, false, true, false},
+			[]bool{true, false, false, true, false, true, false},
+			[]bool{false, true, false, false, false, false, true},
+			[]bool{false, false, false, true, true, false, true},
+		},
+		solution: [][]int{
+			[]int{0, 4, 6},
+			[]int{0, 5, 6},
+			[]int{1, 4, 6},
+			[]int{1, 5, 6},
+		},
 	}
-	impossibleSolution = [][]int{}
 
-	trivial         = New(0, [][]int{})
-	trivialMatrix   = [][]bool{}
-	trivialSolution = [][]int{
-		[]int{},
+	impossible = example{
+		itemCount: 3,
+		options: [][]int{
+			[]int{0, 1},
+			[]int{1, 2},
+		},
+		matrix: [][]bool{
+			[]bool{true, true, false},
+			[]bool{false, true, true},
+		},
+		solution: [][]int{},
+	}
+
+	trivial = example{
+		itemCount: 0,
+		options: [][]int{},
+		matrix: [][]bool{},
+		solution: [][]int{
+			[]int{},
+		},
 	}
 )
+
+func (e example) toDancingLinks() *DancingLinks {
+	return New(e.itemCount, e.options)
+}
 
 func sprintMatrix(matrix [][]bool) string {
 	b := &strings.Builder{}
@@ -88,21 +113,21 @@ func sprintMatrix(matrix [][]bool) string {
 	return b.String()
 }
 
-func testToMatrix(t *testing.T, dl DancingLinks, expected [][]bool) {
-	mat := dl.ToMatrix()
-	if !reflect.DeepEqual(mat, expected) {
+func testToMatrix(t *testing.T, e example) {
+	mat := e.toDancingLinks().ToMatrix()
+	if !reflect.DeepEqual(mat, e.matrix) {
 		t.Errorf(
 			"matrix mismatch:\nshould be\n%s\ngot\n%s",
-			sprintMatrix(expected), sprintMatrix(mat),
+			sprintMatrix(e.matrix), sprintMatrix(mat),
 		)
 	}
 }
 
 func TestToMatrix(t *testing.T) {
-	testToMatrix(t, classic, classicMatrix)
-	testToMatrix(t, classicDuplicates, classicDuplicatesMatrix)
-	testToMatrix(t, impossible, impossibleMatrix)
-	testToMatrix(t, trivial, trivialMatrix)
+	testToMatrix(t, classic)
+	testToMatrix(t, classicDuplicates)
+	testToMatrix(t, impossible)
+	testToMatrix(t, trivial)
 }
 
 func sortSequences(sequences [][]int) {
@@ -114,50 +139,53 @@ func sortSequences(sequences [][]int) {
 	sort.Slice(sequences, func(i, j int) bool {
 		otherSeq := sequences[j]
 
-		// Lexicographically compare covers.
-		for k, value := range sequences[i] {
-			// If we've run out of things to compare, then the shorter
-			// sequence (the other sequence) is less.
-			if k == len(otherSeq) {
-				return false
+			// Lexicographically compare covers.
+			for k, value := range sequences[i] {
+				// If we've run out of things to compare, then the shorter
+				// sequence (the other sequence) is less.
+				if k == len(otherSeq) {
+					return false
+				}
+
+				// Compare leading sequences.  The sequence with lower leading
+				// entries is lower.  If leading entries are the same, move on
+				// to the next entry.
+				switch {
+				case value < otherSeq[k]:
+					return true
+				case value > otherSeq[k]:
+					return false
+				}
 			}
 
-			// Compare leading sequences.  The sequence with lower leading
-			// entries is lower.  If leading entries are the same, move on
-			// to the next entry.
-			switch {
-			case value < otherSeq[k]:
-				return true
-			case value > otherSeq[k]:
-				return false
-			}
-		}
+			// We've run out of things to compare; the shorter list (the
+			// current sequence) is less.
+			return true
+		})
+	}
 
-		// We've run out of things to compare; the shorter list (the
-		// current sequence) is less.
-		return true
-	})
-}
+func testExample(t *testing.T, result [][]int, correct [][]int) {
+	sortSequences(result)
 
-func testExample(t *testing.T, dl DancingLinks, expected [][]int) {
-	covers := dl.AllSolutions()
-	sortSequences(covers)
-
-	if !reflect.DeepEqual(covers, expected) {
-		t.Errorf("\nshould be:\n  %v\nsolver returned:\n  %v", expected, covers)
+	if !reflect.DeepEqual(result, correct) {
+		t.Errorf("\nshould be:\n  %v\nsolver returned:\n  %v", correct, result)
 	}
 }
 
 func TestExamples(t *testing.T) {
-	testExample(t, classic, classicSolution)
-	testExample(t, classicDuplicates, classicDuplicatesSolution)
-	testExample(t, impossible, impossibleSolution)
-	testExample(t, trivial, trivialSolution)
+	for _, e := range []example{
+		classic,
+		classicDuplicates,
+		impossible,
+		trivial,
+	} {
+		testExample(t, e.toDancingLinks().AllSolutions(), e.solution)
+	}
 }
 
 func TestYieldBreak(t *testing.T) {
 	count := 0
-	classicDuplicates.GenerateSolutions(func([]int) bool {
+	classicDuplicates.toDancingLinks().GenerateSolutions(func([]int) bool {
 		count++
 		return count < 2
 	})
@@ -165,4 +193,31 @@ func TestYieldBreak(t *testing.T) {
 	if count != 2 {
 		t.Errorf("short-circuit failed: should run twice, but ran %d times", count)
 	}
+}
+
+func TestForceOptions(t *testing.T) {
+	dl := classicDuplicates.toDancingLinks()
+	dl.ForceOptions(0)
+	testExample(t, dl.AllSolutions(), [][]int{
+		[]int{4, 6},
+		[]int{5, 6},
+	})
+
+	dl = classicDuplicates.toDancingLinks()
+	dl.ForceOptions(0, 1)
+	testExample(t, dl.AllSolutions(), [][]int{
+		[]int{4, 6},
+		[]int{5, 6},
+	})
+
+	dl = classicDuplicates.toDancingLinks()
+	dl.ForceOptions(4)
+	testExample(t, dl.AllSolutions(), [][]int{
+		[]int{0, 6},
+		[]int{1, 6},
+	})
+
+	dl = classicDuplicates.toDancingLinks()
+	dl.ForceOptions(2)
+	testExample(t, dl.AllSolutions(), [][]int{})
 }

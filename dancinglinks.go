@@ -35,12 +35,18 @@ type DancingLinks struct {
 	// Blank "anchor" item node, whose `right` points to the
 	// first/left-most item to be covered.
 	itemHead *itemNode
+
+	// Pre-selected options and associated deleted option indices.
+	selected []int
+	deleted []int
 }
 
-func New(itemCount int, options [][]int) DancingLinks {
-	dl := DancingLinks{
+func New(itemCount int, options [][]int) *DancingLinks {
+	dl := &DancingLinks{
 		options:  make([][]*entryNode, len(options)),
 		itemHead: &itemNode{},
+		selected: []int{},
+		deleted: []int{},
 	}
 
 	// Construct item list.
@@ -99,7 +105,7 @@ func New(itemCount int, options [][]int) DancingLinks {
 	return dl
 }
 
-func FromMatrix(matrix [][]bool) DancingLinks {
+func FromMatrix(matrix [][]bool) *DancingLinks {
 	itemCount := 0
 	options := make([][]int, len(matrix))
 
@@ -121,7 +127,7 @@ func FromMatrix(matrix [][]bool) DancingLinks {
 	return New(itemCount, options)
 }
 
-func (dl DancingLinks) ToMatrix() [][]bool {
+func (dl *DancingLinks) ToMatrix() [][]bool {
 	items := map[*itemNode]int{}
 	index := 0
 	for item := dl.itemHead.right; item != dl.itemHead; item = item.right {
@@ -151,7 +157,7 @@ func (dl DancingLinks) ToMatrix() [][]bool {
 // in items corresponds to a column in the matrix, and each option in
 // options corresponds to a row in the matrix.
 
-func (dl DancingLinks) AllSolutions() [][]int {
+func (dl *DancingLinks) AllSolutions() [][]int {
 	covers := [][]int{}
 	dl.GenerateSolutions(func(cover []int) bool {
 		covers = append(covers, cover)
@@ -160,7 +166,7 @@ func (dl DancingLinks) AllSolutions() [][]int {
 	return covers
 }
 
-func (dl DancingLinks) AnySolution() []int {
+func (dl *DancingLinks) AnySolution() []int {
 	var solution []int
 	dl.GenerateSolutions(func(cover []int) bool {
 		solution = cover
@@ -169,7 +175,55 @@ func (dl DancingLinks) AnySolution() []int {
 	return solution
 }
 
-func (dl DancingLinks) GenerateSolutions(yield func([]int) bool) bool {
+func (dl *DancingLinks) ForceOptions(indices ...int) {
+	for _, index := range indices {
+		dl.selected = append(dl.selected, index)
+		dl.chooseOption(index, &dl.deleted)
+	}
+}
+
+func (dl *DancingLinks) chooseOption(index int, deleted *[]int) {
+	// Keep track of deleted options so that (1) we don't do redundant
+	// deletes, which break things, and (2) we can un-delete them in
+	// reverse order.  The slice stores indices of deleted options in
+	// the order they are deleted.
+
+	// Delete each covered item.
+	for _, covered := range dl.options[index] {
+		item := covered.item
+
+		// Delete covered item from linked list.
+		item.left.right = item.right
+		item.right.left = item.left
+
+		// Delete all options that cover the same item, since we can
+		// only cover each item once.
+		for conflict := item.head.down; conflict != item.head; conflict = conflict.down {
+			// We can only delete nodes once; trying to re-delete may
+			// break things.  So if we've already deleted something, don't
+			// try delete it again.
+			if intSliceContains(*deleted, conflict.option) {
+				continue
+			}
+
+			// Record deleted option.
+			*deleted = append(*deleted, conflict.option)
+
+			// To delete an option, we go through and delete each entry in
+			// the option.
+			for _, entry := range dl.options[conflict.option] {
+				entry.up.down = entry.down
+				entry.down.up = entry.up
+
+				// Update the corresponding item's record of remaining
+				// items.
+				entry.item.choices--
+			}
+		}
+	}
+}
+
+func (dl *DancingLinks) GenerateSolutions(yield func([]int) bool) bool {
 	// First item to cover.  We find the item with the fewest remaining
 	// choices.
 	first := dl.itemHead.right
@@ -186,49 +240,8 @@ func (dl DancingLinks) GenerateSolutions(yield func([]int) bool) bool {
 
 	// Consider each option that covers the first item.
 	for choice := first.head.down; choice != first.head; choice = choice.down {
-
-		// Keep track of deleted options so that (1) we don't do redundant
-		// deletes, which break things, and (2) we can un-delete them in
-		// reverse order.  The slice stores indices of deleted options in
-		// the order they are deleted.
 		deleted := []int{}
-
-		// Retrieve all entries covered by the selected option.
-		entries := dl.options[choice.option]
-
-		// Delete each covered item.
-		for _, covered := range entries {
-			item := covered.item
-
-			// Delete covered item from linked list.
-			item.left.right = item.right
-			item.right.left = item.left
-
-			// Delete all options that cover the same item, since we can
-			// only cover each item once.
-			for conflict := item.head.down; conflict != item.head; conflict = conflict.down {
-				// We can only delete nodes once; trying to re-delete may
-				// break things.  So if we've already deleted something, don't
-				// try delete it again.
-				if intSliceContains(deleted, conflict.option) {
-					continue
-				}
-
-				// Record deleted option.
-				deleted = append(deleted, conflict.option)
-
-				// To delete an option, we go through and delete each entry in
-				// the option.
-				for _, entry := range dl.options[conflict.option] {
-					entry.up.down = entry.down
-					entry.down.up = entry.up
-
-					// Update the corresponding item's record of remaining
-					// items.
-					entry.item.choices--
-				}
-			}
-		}
+		dl.chooseOption(choice.option, &deleted)
 
 		// Recursive call.
 		keepGoing := dl.GenerateSolutions(func(subcover []int) bool {
@@ -240,6 +253,7 @@ func (dl DancingLinks) GenerateSolutions(yield func([]int) bool) bool {
 		}
 
 		// Uncover items in reverse order.
+		entries := dl.options[choice.option]
 		for i := range entries {
 			// We deleted the items left to right (increasing index), so we
 			// uncover the items right to left (decreasing index).
