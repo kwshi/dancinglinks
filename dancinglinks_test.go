@@ -140,7 +140,7 @@ func sortSequences(sequences [][]int) {
 }
 
 func testExample(t *testing.T, dl DancingLinks, expected [][]int) {
-	covers := dl.CollectSolutions()
+	covers := dl.AllSolutions()
 	sortSequences(covers)
 
 	if !reflect.DeepEqual(covers, expected) {
@@ -153,4 +153,16 @@ func TestExamples(t *testing.T) {
 	testExample(t, classicDuplicates, classicDuplicatesSolution)
 	testExample(t, impossible, impossibleSolution)
 	testExample(t, trivial, trivialSolution)
+}
+
+func TestYieldBreak(t *testing.T) {
+	count := 0
+	classicDuplicates.GenerateSolutions(func([]int) bool {
+		count++
+		return count < 2
+	})
+
+	if count != 2 {
+		t.Errorf("short-circuit failed: should run twice, but ran %d times", count)
+	}
 }

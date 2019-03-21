@@ -48,8 +48,8 @@ func New(itemCount int, options [][]int) DancingLinks {
 	lastItem := dl.itemHead
 	for index := range items {
 		newItem := &itemNode{
-			left:  lastItem,
-			head:  &entryNode{option: -1},
+			left: lastItem,
+			head: &entryNode{option: -1},
 		}
 
 		// Add item to slice.
@@ -151,15 +151,25 @@ func (dl DancingLinks) ToMatrix() [][]bool {
 // in items corresponds to a column in the matrix, and each option in
 // options corresponds to a row in the matrix.
 
-func (dl DancingLinks) CollectSolutions() [][]int {
+func (dl DancingLinks) AllSolutions() [][]int {
 	covers := [][]int{}
-	dl.GenerateSolutions(func(cover []int) {
+	dl.GenerateSolutions(func(cover []int) bool {
 		covers = append(covers, cover)
+		return true
 	})
 	return covers
 }
 
-func (dl DancingLinks) GenerateSolutions(yield func([]int)) {
+func (dl DancingLinks) AnySolution() []int {
+	var solution []int
+	dl.GenerateSolutions(func(cover []int) bool {
+		solution = cover
+		return false
+	})
+	return solution
+}
+
+func (dl DancingLinks) GenerateSolutions(yield func([]int) bool) bool {
 	// First item to cover.  We find the item with the fewest remaining
 	// choices.
 	first := dl.itemHead.right
@@ -171,8 +181,7 @@ func (dl DancingLinks) GenerateSolutions(yield func([]int)) {
 
 	// Nothing left to cover!
 	if first == dl.itemHead {
-		yield([]int{})
-		return
+		return yield([]int{})
 	}
 
 	// Consider each option that covers the first item.
@@ -222,9 +231,13 @@ func (dl DancingLinks) GenerateSolutions(yield func([]int)) {
 		}
 
 		// Recursive call.
-		dl.GenerateSolutions(func(subcover []int) {
-			yield(append(subcover, choice.option))
+		keepGoing := dl.GenerateSolutions(func(subcover []int) bool {
+			return yield(append(subcover, choice.option))
 		})
+
+		if !keepGoing {
+			return false
+		}
 
 		// Uncover items in reverse order.
 		for i := range entries {
@@ -253,6 +266,8 @@ func (dl DancingLinks) GenerateSolutions(yield func([]int)) {
 			}
 		}
 	}
+
+	return true
 }
 
 func intSliceContains(slice []int, element int) bool {
