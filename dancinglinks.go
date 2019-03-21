@@ -248,10 +248,6 @@ func (dl *DancingLinks) GenerateSolutions(yield func([]int) bool) bool {
 			return yield(append(subcover, choice.option))
 		})
 
-		if !keepGoing {
-			return false
-		}
-
 		// Uncover items in reverse order.
 		entries := dl.options[choice.option]
 		for i := range entries {
@@ -278,6 +274,12 @@ func (dl *DancingLinks) GenerateSolutions(yield func([]int) bool) bool {
 				// Update item's choices counter.
 				entry.item.choices++
 			}
+		}
+
+		// If the yield call returned false, then _after cleaning up and
+		// restoring the link states we quit.
+		if !keepGoing {
+			return false
 		}
 	}
 
