@@ -1,9 +1,6 @@
 package dancinglinks
 
 type itemNode struct {
-	// Index of the item.
-	index int
-
 	// Linked list neighbors.
 	left  *itemNode
 	right *itemNode
@@ -43,7 +40,7 @@ type DancingLinks struct {
 func New(itemCount int, options [][]int) DancingLinks {
 	dl := DancingLinks{
 		options:  make([][]*entryNode, len(options)),
-		itemHead: &itemNode{index: -1},
+		itemHead: &itemNode{},
 	}
 
 	// Construct item list.
@@ -51,7 +48,6 @@ func New(itemCount int, options [][]int) DancingLinks {
 	lastItem := dl.itemHead
 	for index := range items {
 		newItem := &itemNode{
-			index: index,
 			left:  lastItem,
 			head:  &entryNode{option: -1},
 		}
