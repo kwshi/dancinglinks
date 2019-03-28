@@ -12,7 +12,7 @@ type example struct {
 	itemCount int
 	options [][]int
 	matrix [][]bool
-	solution [][]int
+	solution [][]Step
 }
 
 var (
@@ -34,8 +34,12 @@ var (
 			[]bool{false, true, false, false, false, false, true},
 			[]bool{false, false, false, true, true, false, true},
 		},
-		solution: [][]int{
-			[]int{0, 3, 4},
+		solution: [][]Step{
+			[]Step{
+				Step{3, []int{1, 3}},
+				Step{4, []int{4}},
+				Step{0, []int{0}},
+			},
 		},
 	}
 
@@ -61,11 +65,27 @@ var (
 			[]bool{false, true, false, false, false, false, true},
 			[]bool{false, false, false, true, true, false, true},
 		},
-		solution: [][]int{
-			[]int{0, 4, 6},
-			[]int{0, 5, 6},
-			[]int{1, 4, 6},
-			[]int{1, 5, 6},
+		solution: [][]Step{
+			[]Step{
+				Step{6, []int{3, 6}},
+				Step{4, []int{4, 5}},
+				Step{0, []int{0, 1}},
+			},
+			[]Step{
+				Step{6, []int{3, 6}},
+				Step{4, []int{4, 5}},
+				Step{1, []int{0, 1}},
+			},
+			[]Step{
+				Step{6, []int{3, 6}},
+				Step{5, []int{4, 5}},
+				Step{0, []int{0, 1}},
+			},
+			[]Step{
+				Step{6, []int{3, 6}},
+				Step{5, []int{4, 5}},
+				Step{1, []int{0, 1}},
+			},
 		},
 	}
 
@@ -79,15 +99,15 @@ var (
 			[]bool{true, true, false},
 			[]bool{false, true, true},
 		},
-		solution: [][]int{},
+		solution: [][]Step{},
 	}
 
 	trivial = example{
 		itemCount: 0,
 		options: [][]int{},
 		matrix: [][]bool{},
-		solution: [][]int{
-			[]int{},
+		solution: [][]Step{
+			[]Step{},
 		},
 	}
 )
@@ -164,9 +184,7 @@ func sortSequences(sequences [][]int) {
 		})
 	}
 
-func testExample(t *testing.T, result [][]int, correct [][]int) {
-	sortSequences(result)
-
+func testExample(t *testing.T, result [][]Step, correct [][]Step) {
 	if !reflect.DeepEqual(result, correct) {
 		t.Errorf("\nshould be:\n  %v\nsolver returned:\n  %v", correct, result)
 	}
@@ -185,7 +203,7 @@ func TestExamples(t *testing.T) {
 
 func TestYieldBreak(t *testing.T) {
 	count := 0
-	classicDuplicates.toDancingLinks().GenerateSolutions(func([]int) bool {
+	classicDuplicates.toDancingLinks().GenerateSolutions(func([]Step) bool {
 		count++
 		return count < 2
 	})
@@ -198,26 +216,44 @@ func TestYieldBreak(t *testing.T) {
 func TestForceOptions(t *testing.T) {
 	dl := classicDuplicates.toDancingLinks()
 	dl.ForceOptions(0)
-	testExample(t, dl.AllSolutions(), [][]int{
-		[]int{4, 6},
-		[]int{5, 6},
+	testExample(t, dl.AllSolutions(), [][]Step{
+		[]Step{
+			Step{6, []int{6}},
+			Step{4, []int{4, 5}},
+		},
+		[]Step{
+			Step{6, []int{6}},
+			Step{5, []int{4, 5}},
+		},
 	})
 
 	dl = classicDuplicates.toDancingLinks()
 	dl.ForceOptions(0, 1)
-	testExample(t, dl.AllSolutions(), [][]int{
-		[]int{4, 6},
-		[]int{5, 6},
+	testExample(t, dl.AllSolutions(), [][]Step{
+		[]Step{
+			Step{6, []int{6}},
+			Step{4, []int{4, 5}},
+		},
+		[]Step{
+			Step{6, []int{6}},
+			Step{5, []int{4, 5}},
+		},
 	})
 
 	dl = classicDuplicates.toDancingLinks()
 	dl.ForceOptions(4)
-	testExample(t, dl.AllSolutions(), [][]int{
-		[]int{0, 6},
-		[]int{1, 6},
+	testExample(t, dl.AllSolutions(), [][]Step{
+		[]Step{
+			Step{6, []int{6}},
+			Step{0, []int{0, 1}},
+		},
+		[]Step{
+			Step{6, []int{6}},
+			Step{1, []int{0, 1}},
+		},
 	})
 
 	dl = classicDuplicates.toDancingLinks()
 	dl.ForceOptions(2)
-	testExample(t, dl.AllSolutions(), [][]int{})
+	testExample(t, dl.AllSolutions(), [][]Step{})
 }

@@ -1,5 +1,11 @@
 package dancinglinks
 
+type Step struct {
+	option  int
+	choices []int
+}
+
+
 type itemNode struct {
 	// Linked list neighbors.
 	left  *itemNode
@@ -38,7 +44,7 @@ type DancingLinks struct {
 
 	// Pre-selected options and associated deleted option indices.
 	selected []int
-	deleted []int
+	deleted  []int
 }
 
 func New(itemCount int, options [][]int) *DancingLinks {
@@ -46,7 +52,7 @@ func New(itemCount int, options [][]int) *DancingLinks {
 		options:  make([][]*entryNode, len(options)),
 		itemHead: &itemNode{},
 		selected: []int{},
-		deleted: []int{},
+		deleted:  []int{},
 	}
 
 	// Construct item list.
@@ -157,18 +163,18 @@ func (dl *DancingLinks) ToMatrix() [][]bool {
 // in items corresponds to a column in the matrix, and each option in
 // options corresponds to a row in the matrix.
 
-func (dl *DancingLinks) AllSolutions() [][]int {
-	covers := [][]int{}
-	dl.GenerateSolutions(func(cover []int) bool {
+func (dl *DancingLinks) AllSolutions() [][]Step {
+	covers := [][]Step{}
+	dl.GenerateSolutions(func(cover []Step) bool {
 		covers = append(covers, cover)
 		return true
 	})
 	return covers
 }
 
-func (dl *DancingLinks) AnySolution() []int {
-	var solution []int
-	dl.GenerateSolutions(func(cover []int) bool {
+func (dl *DancingLinks) AnySolution() []Step {
+	var solution []Step
+	dl.GenerateSolutions(func(cover []Step) bool {
 		solution = cover
 		return false
 	})
@@ -223,7 +229,19 @@ func (dl *DancingLinks) chooseOption(index int, deleted *[]int) {
 	}
 }
 
-func (dl *DancingLinks) GenerateSolutions(yield func([]int) bool) bool {
+func (dl *DancingLinks) GenerateSolutions(yield func([]Step) bool) {
+	// Reverse order so that the first choice made (which is yielded
+	// internally as the last choice in the slice) is now returned
+	// first.
+	dl.generateSolutions(func(s []Step) bool {
+		for i := 0; i < len(s)/2; i++ {
+			s[i], s[len(s)-1-i] = s[len(s)-1-i], s[i]
+		}
+		return yield(s)
+	})
+}
+
+func (dl *DancingLinks) generateSolutions(yield func([]Step) bool) bool {
 	// First item to cover.  We find the item with the fewest remaining
 	// choices.
 	first := dl.itemHead.right
@@ -235,21 +253,27 @@ func (dl *DancingLinks) GenerateSolutions(yield func([]int) bool) bool {
 
 	// Nothing left to cover!
 	if first == dl.itemHead {
-		return yield([]int{})
+		return yield([]Step{})
 	}
 
-	// Consider each option that covers the first item.
+	choices := []int{}
 	for choice := first.head.down; choice != first.head; choice = choice.down {
+		choices = append(choices, choice.option)
+	}
+
+
+	// Consider each option that covers the first item.
+	for _, choice := range choices {
 		deleted := []int{}
-		dl.chooseOption(choice.option, &deleted)
+		dl.chooseOption(choice, &deleted)
 
 		// Recursive call.
-		keepGoing := dl.GenerateSolutions(func(subcover []int) bool {
-			return yield(append(subcover, choice.option))
+		keepGoing := dl.generateSolutions(func(subcover []Step) bool {
+			return yield(append(subcover, Step{choice, choices}))
 		})
 
 		// Uncover items in reverse order.
-		entries := dl.options[choice.option]
+		entries := dl.options[choice]
 		for i := range entries {
 			// We deleted the items left to right (increasing index), so we
 			// uncover the items right to left (decreasing index).
