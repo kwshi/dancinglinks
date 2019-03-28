@@ -36,9 +36,9 @@ var (
 		},
 		solution: [][]Step{
 			[]Step{
-				Step{3, []int{1, 3}},
-				Step{4, []int{4}},
-				Step{0, []int{0}},
+				Step{0, 3, []int{1, 3}},
+				Step{1, 4, []int{4}},
+				Step{2, 0, []int{0}},
 			},
 		},
 	}
@@ -67,24 +67,24 @@ var (
 		},
 		solution: [][]Step{
 			[]Step{
-				Step{6, []int{3, 6}},
-				Step{4, []int{4, 5}},
-				Step{0, []int{0, 1}},
+				Step{1, 6, []int{3, 6}},
+				Step{0, 4, []int{4, 5}},
+				Step{2, 0, []int{0, 1}},
 			},
 			[]Step{
-				Step{6, []int{3, 6}},
-				Step{4, []int{4, 5}},
-				Step{1, []int{0, 1}},
+				Step{1, 6, []int{3, 6}},
+				Step{0, 4, []int{4, 5}},
+				Step{2, 1, []int{0, 1}},
 			},
 			[]Step{
-				Step{6, []int{3, 6}},
-				Step{5, []int{4, 5}},
-				Step{0, []int{0, 1}},
+				Step{1, 6, []int{3, 6}},
+				Step{0, 5, []int{4, 5}},
+				Step{2, 0, []int{0, 1}},
 			},
 			[]Step{
-				Step{6, []int{3, 6}},
-				Step{5, []int{4, 5}},
-				Step{1, []int{0, 1}},
+				Step{1, 6, []int{3, 6}},
+				Step{0, 5, []int{4, 5}},
+				Step{2, 1, []int{0, 1}},
 			},
 		},
 	}
@@ -218,12 +218,12 @@ func TestForceOptions(t *testing.T) {
 	dl.ForceOptions(0)
 	testExample(t, dl.AllSolutions(), [][]Step{
 		[]Step{
-			Step{6, []int{6}},
-			Step{4, []int{4, 5}},
+			Step{1, 6, []int{6}},
+			Step{0, 4, []int{4, 5}},
 		},
 		[]Step{
-			Step{6, []int{6}},
-			Step{5, []int{4, 5}},
+			Step{1, 6, []int{6}},
+			Step{0, 5, []int{4, 5}},
 		},
 	})
 
@@ -231,12 +231,12 @@ func TestForceOptions(t *testing.T) {
 	dl.ForceOptions(0, 1)
 	testExample(t, dl.AllSolutions(), [][]Step{
 		[]Step{
-			Step{6, []int{6}},
-			Step{4, []int{4, 5}},
+			Step{1, 6, []int{6}},
+			Step{0, 4, []int{4, 5}},
 		},
 		[]Step{
-			Step{6, []int{6}},
-			Step{5, []int{4, 5}},
+			Step{1, 6, []int{6}},
+			Step{0, 5, []int{4, 5}},
 		},
 	})
 
@@ -244,12 +244,12 @@ func TestForceOptions(t *testing.T) {
 	dl.ForceOptions(4)
 	testExample(t, dl.AllSolutions(), [][]Step{
 		[]Step{
-			Step{6, []int{6}},
-			Step{0, []int{0, 1}},
+			Step{1, 6, []int{6}},
+			Step{2, 0, []int{0, 1}},
 		},
 		[]Step{
-			Step{6, []int{6}},
-			Step{1, []int{0, 1}},
+			Step{1, 6, []int{6}},
+			Step{2, 1, []int{0, 1}},
 		},
 	})
 

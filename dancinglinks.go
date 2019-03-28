@@ -1,14 +1,16 @@
 package dancinglinks
 
-//import "fmt"
 
 type Step struct {
+	item int
 	option  int
 	choices []int
 }
 
 
 type itemNode struct {
+	index int
+
 	// Linked list neighbors.
 	left  *itemNode
 	right *itemNode
@@ -52,7 +54,7 @@ type DancingLinks struct {
 func New(itemCount int, options [][]int) *DancingLinks {
 	dl := &DancingLinks{
 		options:  make([][]*entryNode, len(options)),
-		itemHead: &itemNode{},
+		itemHead: &itemNode{index: -1},
 		selected: []int{},
 		deleted:  []int{},
 	}
@@ -62,6 +64,7 @@ func New(itemCount int, options [][]int) *DancingLinks {
 	lastItem := dl.itemHead
 	for index := range items {
 		newItem := &itemNode{
+			index: index,
 			left: lastItem,
 			head: &entryNode{option: -1},
 		}
@@ -232,37 +235,49 @@ func (dl *DancingLinks) chooseOption(index int, deleted *[]int) {
 }
 
 
-type searchStage struct {
-	choice int
-	choices []int
-}
-type cleanupStage struct {
-	choice int
+type stage struct {
+	item int
+	parent int
 	deleted []int
+	choices []int
+	i int
 }
-
-
-type stageType interface{}
 
 
 func (dl *DancingLinks) GenerateSolutions(yield func([]Step) bool) {
-	stages := []stageType{
-		searchStage{-1, nil},
+	item, choices := dl.nextChoices()
+	if choices == nil {
+		yield([]Step{})
+		return
+	}
+	stages := []*stage{
+		&stage{
+			item: item,
+			parent: -1,
+			deleted: nil,
+			choices: choices,
+			i: 0,
+		},
+		//stage{-1, nil, -1},
 	}
 
 	path := []Step{}
 
 	for len(stages) > 0 {
-		stage := stages[len(stages)-1]
-		stages = stages[:len(stages)-1]
+		s := stages[len(stages)-1]
 
-		switch stage := stage.(type) {
+		if s.i == len(s.choices) {
+			stages = stages[:len(stages)-1]
 
-		case cleanupStage:
+			if s.parent == -1 {
+				continue
+			}
+
+			//
 			path = path[:len(path)-1]
 
 			// Uncover items in reverse order.
-			entries := dl.options[stage.choice]
+			entries := dl.options[s.parent]
 			for i := range entries {
 				// We deleted the items left to right (increasing index), so we
 				// uncover the items right to left (decreasing index).
@@ -275,9 +290,10 @@ func (dl *DancingLinks) GenerateSolutions(yield func([]Step) bool) {
 			}
 
 			// Restore conflicting options in reverse order.
-			for i := range stage.deleted {
+			for i := range s.deleted {
 				// Retrieve index of deleted option, in reverse order.
-				option := stage.deleted[len(stage.deleted)-1-i]
+				option := s.deleted[len(s.deleted)-1-i]
+
 
 				// To restore the option, we restore each entry in the option.
 				for _, entry := range dl.options[option] {
@@ -289,38 +305,45 @@ func (dl *DancingLinks) GenerateSolutions(yield func([]Step) bool) {
 				}
 			}
 
-		case searchStage:
-			if stage.choice != -1 {
-				deleted := []int{}
-				dl.chooseOption(stage.choice, &deleted)
-				stages = append(stages, cleanupStage{stage.choice, deleted})
-				path = append(path, Step{stage.choice, stage.choices})
-			}
+			continue
+		}
 
-			choices := dl.nextChoices()
+		//
+		//if s.parent != -1 {
+		deleted := []int{}
+		dl.chooseOption(s.choices[s.i], &deleted)
+		path = append(path, Step{s.item, s.choices[s.i], s.choices})
 
-			if choices == nil {
-				keepGoing := yield(append([]Step{}, path...))
+		item, choices := dl.nextChoices()
 
-				// If the yield call returned false, then _after cleaning up and
-				// restoring the link states we quit.
-				if !keepGoing {
-					return
-				}
+		//} else {
+		//stages = stages[:len(stages)-1]
+		//}
 
-				break
-			}
+		if choices == nil {
+			keepGoing := yield(append([]Step{}, path...))
 
-			// Consider each option that covers the first item.
-			for i := range choices {
-				choice := choices[len(choices)-1-i]
-				stages = append(stages, searchStage{choice, choices})
+			// If the yield call returned false, then _after cleaning up and
+			// restoring the link states we quit.
+			if !keepGoing {
+				return
 			}
 		}
+
+		// Consider each option that covers the first item.
+		stages = append(stages, &stage{
+			item:	item,
+			parent: s.choices[s.i],
+			deleted: deleted,
+			choices: choices,
+			i: 0,
+		})
+
+		s.i++
 	}
 }
 
-func (dl *DancingLinks) nextChoices() []int {
+func (dl *DancingLinks) nextChoices() (int, []int) {
 	// First item to cover.  We find the item with the fewest remaining
 	// choices.
 	first := dl.itemHead.right
@@ -332,7 +355,7 @@ func (dl *DancingLinks) nextChoices() []int {
 
 	// Nothing left to cover!
 	if first == dl.itemHead {
-		return nil
+		return -1, nil
 	}
 
 	choices := []int{}
@@ -340,7 +363,7 @@ func (dl *DancingLinks) nextChoices() []int {
 		choices = append(choices, choice.option)
 	}
 
-	return choices
+	return first.index, choices
 }
 
 func intSliceContains(slice []int, element int) bool {
