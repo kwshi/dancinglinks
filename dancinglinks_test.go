@@ -10,9 +10,9 @@ import (
 
 type example struct {
 	itemCount int
-	options [][]int
-	matrix [][]bool
-	solution [][]Step
+	options   [][]int
+	matrix    [][]bool
+	solution  [][]Step
 }
 
 var (
@@ -104,8 +104,8 @@ var (
 
 	trivial = example{
 		itemCount: 0,
-		options: [][]int{},
-		matrix: [][]bool{},
+		options:   [][]int{},
+		matrix:    [][]bool{},
 		solution: [][]Step{
 			[]Step{},
 		},
@@ -159,30 +159,30 @@ func sortSequences(sequences [][]int) {
 	sort.Slice(sequences, func(i, j int) bool {
 		otherSeq := sequences[j]
 
-			// Lexicographically compare covers.
-			for k, value := range sequences[i] {
-				// If we've run out of things to compare, then the shorter
-				// sequence (the other sequence) is less.
-				if k == len(otherSeq) {
-					return false
-				}
-
-				// Compare leading sequences.  The sequence with lower leading
-				// entries is lower.  If leading entries are the same, move on
-				// to the next entry.
-				switch {
-				case value < otherSeq[k]:
-					return true
-				case value > otherSeq[k]:
-					return false
-				}
+		// Lexicographically compare covers.
+		for k, value := range sequences[i] {
+			// If we've run out of things to compare, then the shorter
+			// sequence (the other sequence) is less.
+			if k == len(otherSeq) {
+				return false
 			}
 
-			// We've run out of things to compare; the shorter list (the
-			// current sequence) is less.
-			return true
-		})
-	}
+			// Compare leading sequences.  The sequence with lower leading
+			// entries is lower.  If leading entries are the same, move on
+			// to the next entry.
+			switch {
+			case value < otherSeq[k]:
+				return true
+			case value > otherSeq[k]:
+				return false
+			}
+		}
+
+		// We've run out of things to compare; the shorter list (the
+		// current sequence) is less.
+		return true
+	})
+}
 
 func testExample(t *testing.T, result [][]Step, correct [][]Step) {
 	if !reflect.DeepEqual(result, correct) {

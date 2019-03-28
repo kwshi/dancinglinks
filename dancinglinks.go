@@ -1,12 +1,10 @@
 package dancinglinks
 
-
 type Step struct {
-	item int
+	item    int
 	option  int
 	choices []int
 }
-
 
 type itemNode struct {
 	index int
@@ -65,8 +63,8 @@ func New(itemCount int, options [][]int) *DancingLinks {
 	for index := range items {
 		newItem := &itemNode{
 			index: index,
-			left: lastItem,
-			head: &entryNode{option: -1},
+			left:  lastItem,
+			head:  &entryNode{option: -1},
 		}
 
 		// Add item to slice.
@@ -234,15 +232,13 @@ func (dl *DancingLinks) chooseOption(index int, deleted *[]int) {
 	}
 }
 
-
 type stage struct {
-	item int
-	parent int
+	item    int
+	parent  int
 	deleted []int
 	choices []int
-	i int
+	i       int
 }
-
 
 func (dl *DancingLinks) GenerateSolutions(yield func([]Step) bool) {
 	item, choices := dl.nextChoices()
@@ -252,11 +248,11 @@ func (dl *DancingLinks) GenerateSolutions(yield func([]Step) bool) {
 	}
 	stages := []*stage{
 		&stage{
-			item: item,
-			parent: -1,
+			item:    item,
+			parent:  -1,
 			deleted: nil,
 			choices: choices,
-			i: 0,
+			i:       0,
 		},
 		//stage{-1, nil, -1},
 	}
@@ -296,7 +292,6 @@ func (dl *DancingLinks) GenerateSolutions(yield func([]Step) bool) {
 				// Retrieve index of deleted option, in reverse order.
 				option := s.deleted[len(s.deleted)-1-i]
 
-
 				// To restore the option, we restore each entry in the option.
 				for _, entry := range dl.options[option] {
 					entry.up.down = entry
@@ -328,11 +323,11 @@ func (dl *DancingLinks) GenerateSolutions(yield func([]Step) bool) {
 
 		// Consider each option that covers the first item.
 		stages = append(stages, &stage{
-			item:	item,
-			parent: s.choices[s.i],
+			item:    item,
+			parent:  s.choices[s.i],
 			deleted: deleted,
 			choices: choices,
-			i: 0,
+			i:       0,
 		})
 
 		s.i++
