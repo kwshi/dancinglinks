@@ -1,5 +1,7 @@
 package dancinglinks
 
+//import "fmt"
+
 type Step struct {
 	option  int
 	choices []int
@@ -229,19 +231,96 @@ func (dl *DancingLinks) chooseOption(index int, deleted *[]int) {
 	}
 }
 
-func (dl *DancingLinks) GenerateSolutions(yield func([]Step) bool) {
-	// Reverse order so that the first choice made (which is yielded
-	// internally as the last choice in the slice) is now returned
-	// first.
-	dl.generateSolutions(func(s []Step) bool {
-		for i := 0; i < len(s)/2; i++ {
-			s[i], s[len(s)-1-i] = s[len(s)-1-i], s[i]
-		}
-		return yield(s)
-	})
+
+type searchStage struct {
+	choice int
+	choices []int
+}
+type cleanupStage struct {
+	choice int
+	deleted []int
 }
 
-func (dl *DancingLinks) generateSolutions(yield func([]Step) bool) bool {
+
+type stageType interface{}
+
+
+func (dl *DancingLinks) GenerateSolutions(yield func([]Step) bool) {
+	stages := []stageType{
+		searchStage{-1, nil},
+	}
+
+	path := []Step{}
+
+	for len(stages) > 0 {
+		stage := stages[len(stages)-1]
+		stages = stages[:len(stages)-1]
+
+		switch stage := stage.(type) {
+
+		case cleanupStage:
+			path = path[:len(path)-1]
+
+			// Uncover items in reverse order.
+			entries := dl.options[stage.choice]
+			for i := range entries {
+				// We deleted the items left to right (increasing index), so we
+				// uncover the items right to left (decreasing index).
+				entry := entries[len(entries)-1-i]
+				item := entry.item
+
+				// Uncover item.
+				item.left.right = item
+				item.right.left = item
+			}
+
+			// Restore conflicting options in reverse order.
+			for i := range stage.deleted {
+				// Retrieve index of deleted option, in reverse order.
+				option := stage.deleted[len(stage.deleted)-1-i]
+
+				// To restore the option, we restore each entry in the option.
+				for _, entry := range dl.options[option] {
+					entry.up.down = entry
+					entry.down.up = entry
+
+					// Update item's choices counter.
+					entry.item.choices++
+				}
+			}
+
+		case searchStage:
+			if stage.choice != -1 {
+				deleted := []int{}
+				dl.chooseOption(stage.choice, &deleted)
+				stages = append(stages, cleanupStage{stage.choice, deleted})
+				path = append(path, Step{stage.choice, stage.choices})
+			}
+
+			choices := dl.nextChoices()
+
+			if choices == nil {
+				keepGoing := yield(append([]Step{}, path...))
+
+				// If the yield call returned false, then _after cleaning up and
+				// restoring the link states we quit.
+				if !keepGoing {
+					return
+				}
+
+				break
+			}
+
+			// Consider each option that covers the first item.
+			for i := range choices {
+				choice := choices[len(choices)-1-i]
+				stages = append(stages, searchStage{choice, choices})
+			}
+		}
+	}
+}
+
+func (dl *DancingLinks) nextChoices() []int {
 	// First item to cover.  We find the item with the fewest remaining
 	// choices.
 	first := dl.itemHead.right
@@ -253,7 +332,7 @@ func (dl *DancingLinks) generateSolutions(yield func([]Step) bool) bool {
 
 	// Nothing left to cover!
 	if first == dl.itemHead {
-		return yield([]Step{})
+		return nil
 	}
 
 	choices := []int{}
@@ -261,53 +340,7 @@ func (dl *DancingLinks) generateSolutions(yield func([]Step) bool) bool {
 		choices = append(choices, choice.option)
 	}
 
-
-	// Consider each option that covers the first item.
-	for _, choice := range choices {
-		deleted := []int{}
-		dl.chooseOption(choice, &deleted)
-
-		// Recursive call.
-		keepGoing := dl.generateSolutions(func(subcover []Step) bool {
-			return yield(append(subcover, Step{choice, choices}))
-		})
-
-		// Uncover items in reverse order.
-		entries := dl.options[choice]
-		for i := range entries {
-			// We deleted the items left to right (increasing index), so we
-			// uncover the items right to left (decreasing index).
-			entry := entries[len(entries)-1-i]
-			item := entry.item
-
-			// Uncover item.
-			item.left.right = item
-			item.right.left = item
-		}
-
-		// Restore conflicting options in reverse order.
-		for i := range deleted {
-			// Retrieve index of deleted option, in reverse order.
-			option := deleted[len(deleted)-1-i]
-
-			// To restore the option, we restore each entry in the option.
-			for _, entry := range dl.options[option] {
-				entry.up.down = entry
-				entry.down.up = entry
-
-				// Update item's choices counter.
-				entry.item.choices++
-			}
-		}
-
-		// If the yield call returned false, then _after cleaning up and
-		// restoring the link states we quit.
-		if !keepGoing {
-			return false
-		}
-	}
-
-	return true
+	return choices
 }
 
 func intSliceContains(slice []int, element int) bool {
