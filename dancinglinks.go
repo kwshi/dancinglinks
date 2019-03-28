@@ -263,10 +263,12 @@ func (dl *DancingLinks) GenerateSolutions(yield func([]Step) bool) {
 
 	path := []Step{}
 
+	keepGoing := true
+
 	for len(stages) > 0 {
 		s := stages[len(stages)-1]
 
-		if s.i == len(s.choices) {
+		if s.i == len(s.choices) || !keepGoing {
 			stages = stages[:len(stages)-1]
 
 			if s.parent == -1 {
@@ -321,13 +323,7 @@ func (dl *DancingLinks) GenerateSolutions(yield func([]Step) bool) {
 		//}
 
 		if choices == nil {
-			keepGoing := yield(append([]Step{}, path...))
-
-			// If the yield call returned false, then _after cleaning up and
-			// restoring the link states we quit.
-			if !keepGoing {
-				return
-			}
+			keepGoing = yield(append([]Step{}, path...))
 		}
 
 		// Consider each option that covers the first item.

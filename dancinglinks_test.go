@@ -217,7 +217,8 @@ func BenchmarkExamples(b *testing.B) {
 
 func TestYieldBreak(t *testing.T) {
 	count := 0
-	classicDuplicates.toDancingLinks().GenerateSolutions(func([]Step) bool {
+	dl := classicDuplicates.toDancingLinks()
+	dl.GenerateSolutions(func([]Step) bool {
 		count++
 		return count < 2
 	})
@@ -225,6 +226,9 @@ func TestYieldBreak(t *testing.T) {
 	if count != 2 {
 		t.Errorf("short-circuit failed: should run twice, but ran %d times", count)
 	}
+
+	t.Log("testing short-circuit reset")
+	testExample(t, dl.AllSolutions(), classicDuplicates.solution)
 }
 
 func TestForceOptions(t *testing.T) {
