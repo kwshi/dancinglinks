@@ -202,14 +202,15 @@ func TestExamples(t *testing.T) {
 }
 
 func BenchmarkExamples(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		for _, e := range []example{
-			classic,
-			classicDuplicates,
-			impossible,
-			trivial,
-		} {
-			e.toDancingLinks().AllSolutions()
+	for _, e := range []example{
+		classic,
+		classicDuplicates,
+		impossible,
+		trivial,
+	} {
+		dl := e.toDancingLinks()
+		for i := 0; i < b.N; i++ {
+			dl.AllSolutions()
 		}
 	}
 }
