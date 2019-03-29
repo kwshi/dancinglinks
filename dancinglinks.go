@@ -5,7 +5,7 @@ package dancinglinks
 // the items.  The exact cover problem solver returns a selection of
 // the option such that each item is contained in exactly one of the
 // selected options.
-type DancingLinks struct {
+type DLX struct {
 	// A list of options.  Each "option" is a list of pointers to the
 	// entries provided by that option.
 	options [][]*entryNode
@@ -83,8 +83,8 @@ type stage struct {
 	i       int
 }
 
-func New(itemCount int, options [][]int) *DancingLinks {
-	dl := &DancingLinks{
+func New(itemCount int, options [][]int) *DLX {
+	dl := &DLX{
 		options:  make([][]*entryNode, len(options)),
 		itemHead: &itemNode{index: -1},
 		selected: []int{},
@@ -148,7 +148,7 @@ func New(itemCount int, options [][]int) *DancingLinks {
 	return dl
 }
 
-func FromMatrix(matrix [][]bool) *DancingLinks {
+func FromMatrix(matrix [][]bool) *DLX {
 	itemCount := 0
 	options := make([][]int, len(matrix))
 
@@ -170,7 +170,7 @@ func FromMatrix(matrix [][]bool) *DancingLinks {
 	return New(itemCount, options)
 }
 
-func (dl *DancingLinks) ToMatrix() [][]bool {
+func (dl *DLX) ToMatrix() [][]bool {
 	items := map[*itemNode]int{}
 	index := 0
 	for item := dl.itemHead.right; item != dl.itemHead; item = item.right {
@@ -191,20 +191,20 @@ func (dl *DancingLinks) ToMatrix() [][]bool {
 	return mat
 }
 
-func (dl *DancingLinks) ForceOptions(indices ...int) {
+func (dl *DLX) ForceOptions(indices ...int) {
 	for _, index := range indices {
 		dl.selected = append(dl.selected, index)
 		dl.chooseOption(index, &dl.deleted)
 	}
 }
 
-func (dl *DancingLinks) UnforceOptions() {
+func (dl *DLX) UnforceOptions() {
 	dl.restoreOptions(dl.deleted)
 	dl.deleted = dl.deleted[:0]
 	dl.selected = dl.selected[:0]
 }
 
-func (dl *DancingLinks) GenerateSolutions(yield func([]Step) bool) bool {
+func (dl *DLX) GenerateSolutions(yield func([]Step) bool) bool {
 
 	item, choices := dl.nextChoices()
 	if choices == nil {
@@ -263,7 +263,7 @@ func (dl *DancingLinks) GenerateSolutions(yield func([]Step) bool) bool {
 	}
 }
 
-func (dl *DancingLinks) GenerateCovers(yield func([]int) bool) {
+func (dl *DLX) GenerateCovers(yield func([]int) bool) {
 	dl.GenerateSolutions(func(solution []Step) bool {
 		cover := make([]int, len(solution))
 		for i, step := range solution {
@@ -273,7 +273,7 @@ func (dl *DancingLinks) GenerateCovers(yield func([]int) bool) {
 	})
 }
 
-func (dl *DancingLinks) AllSolutions() [][]Step {
+func (dl *DLX) AllSolutions() [][]Step {
 	solutions := make([][]Step, 0)
 	dl.GenerateSolutions(func(solution []Step) bool {
 		solutions = append(solutions, solution)
@@ -282,7 +282,7 @@ func (dl *DancingLinks) AllSolutions() [][]Step {
 	return solutions
 }
 
-func (dl *DancingLinks) AllCovers() [][]int {
+func (dl *DLX) AllCovers() [][]int {
 	covers := make([][]int, 0)
 	dl.GenerateCovers(func(cover []int) bool {
 		covers = append(covers, cover)
@@ -291,7 +291,7 @@ func (dl *DancingLinks) AllCovers() [][]int {
 	return covers
 }
 
-func (dl *DancingLinks) AnySolution() []Step {
+func (dl *DLX) AnySolution() []Step {
 	var solution []Step
 	dl.GenerateSolutions(func(s []Step) bool {
 		solution = s
@@ -300,7 +300,7 @@ func (dl *DancingLinks) AnySolution() []Step {
 	return solution
 }
 
-func (dl *DancingLinks) AnyCover() []int {
+func (dl *DLX) AnyCover() []int {
 	var cover []int
 	dl.GenerateCovers(func(c []int) bool {
 		cover = c
@@ -309,7 +309,7 @@ func (dl *DancingLinks) AnyCover() []int {
 	return cover
 }
 
-func (dl *DancingLinks) chooseOption(index int, deleted *[]int) {
+func (dl *DLX) chooseOption(index int, deleted *[]int) {
 	// Keep track of deleted options so that (1) we don't do redundant
 	// deletes, which break things, and (2) we can un-delete them in
 	// reverse order.  The slice stores indices of deleted options in
@@ -350,7 +350,7 @@ func (dl *DancingLinks) chooseOption(index int, deleted *[]int) {
 	}
 }
 
-func (dl *DancingLinks) unchooseOption(index int, deleted []int) {
+func (dl *DLX) unchooseOption(index int, deleted []int) {
 	// Uncover items in reverse order.
 	entries := dl.options[index]
 	for i := range entries {
@@ -367,7 +367,7 @@ func (dl *DancingLinks) unchooseOption(index int, deleted []int) {
 	dl.restoreOptions(deleted)
 }
 
-func (dl *DancingLinks) restoreOptions(options []int) {
+func (dl *DLX) restoreOptions(options []int) {
 	// Restore conflicting options in reverse order.
 	for i := range options {
 		// To restore the option, we restore each entry in the option.
@@ -381,7 +381,7 @@ func (dl *DancingLinks) restoreOptions(options []int) {
 	}
 }
 
-func (dl *DancingLinks) nextChoices() (int, []int) {
+func (dl *DLX) nextChoices() (int, []int) {
 	// First item to cover.  We find the item with the fewest remaining
 	// choices.
 	first := dl.itemHead.right

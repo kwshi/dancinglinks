@@ -112,7 +112,7 @@ var (
 	}
 )
 
-func (e example) toDancingLinks() *DancingLinks {
+func (e example) toDLX() *DLX {
 	return New(e.itemCount, e.options)
 }
 
@@ -134,7 +134,7 @@ func sprintMatrix(matrix [][]bool) string {
 }
 
 func testToMatrix(t *testing.T, e example) {
-	mat := e.toDancingLinks().ToMatrix()
+	mat := e.toDLX().ToMatrix()
 	if !reflect.DeepEqual(mat, e.matrix) {
 		t.Errorf(
 			"matrix mismatch:\nshould be\n%s\ngot\n%s",
@@ -197,7 +197,7 @@ func TestExamples(t *testing.T) {
 		impossible,
 		trivial,
 	} {
-		testExample(t, e.toDancingLinks().AllSolutions(), e.solution)
+		testExample(t, e.toDLX().AllSolutions(), e.solution)
 	}
 }
 
@@ -208,7 +208,7 @@ func BenchmarkExamples(b *testing.B) {
 		impossible,
 		trivial,
 	} {
-		dl := e.toDancingLinks()
+		dl := e.toDLX()
 		for i := 0; i < b.N; i++ {
 			dl.AllSolutions()
 		}
@@ -217,7 +217,7 @@ func BenchmarkExamples(b *testing.B) {
 
 func TestYieldBreak(t *testing.T) {
 	count := 0
-	dl := classicDuplicates.toDancingLinks()
+	dl := classicDuplicates.toDLX()
 	dl.GenerateSolutions(func([]Step) bool {
 		count++
 		return count < 2
@@ -232,7 +232,7 @@ func TestYieldBreak(t *testing.T) {
 }
 
 func TestForceOptions(t *testing.T) {
-	dl := classicDuplicates.toDancingLinks()
+	dl := classicDuplicates.toDLX()
 	dl.ForceOptions(0)
 	testExample(t, dl.AllSolutions(), [][]Step{
 		[]Step{
@@ -245,7 +245,7 @@ func TestForceOptions(t *testing.T) {
 		},
 	})
 
-	dl = classicDuplicates.toDancingLinks()
+	dl = classicDuplicates.toDLX()
 	dl.ForceOptions(0, 1)
 	testExample(t, dl.AllSolutions(), [][]Step{
 		[]Step{
@@ -258,7 +258,7 @@ func TestForceOptions(t *testing.T) {
 		},
 	})
 
-	dl = classicDuplicates.toDancingLinks()
+	dl = classicDuplicates.toDLX()
 	dl.ForceOptions(4)
 	testExample(t, dl.AllSolutions(), [][]Step{
 		[]Step{
@@ -271,7 +271,7 @@ func TestForceOptions(t *testing.T) {
 		},
 	})
 
-	dl = classicDuplicates.toDancingLinks()
+	dl = classicDuplicates.toDLX()
 	dl.ForceOptions(2)
 	testExample(t, dl.AllSolutions(), [][]Step{})
 }
